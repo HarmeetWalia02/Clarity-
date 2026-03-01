@@ -3,6 +3,16 @@ Adaptive AI Learning Platform for Inclusive Education
 
 Transforming PDFs & Meetings into Personalized Learning Experiences
 
+📉 Problem
+70% of students struggle with dense PDFs. Neurodiverse and multilingual learners face even greater barriers.
+
+💡 Solution
+Clarity transforms static documents and live speech into adaptive, multimodal learning experiences.
+
+📊 Impact
+Personalized learning for ADHD, dyslexia, multilingual learners, and hearing-impaired students.
+
+
 🌍 About Clarity
 
 Clarity is an AI-powered adaptive learning platform built to make academic content accessible for every learner — including neurodiverse students, multilingual users, and learners with vision or hearing challenges.
