@@ -12,53 +12,62 @@ export default function Home() {
   const [quizData, setQuizData] = useState<any[]>([]);
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen relative overflow-hidden text-white">
 
-      {/* ================= NAVIGATION BAR ================= */}
-      <nav className="flex justify-between items-center px-8 py-4 bg-gray-950 border-b border-gray-800 shadow-lg">
-        <h1 className="text-2xl font-bold text-white">
-          NoChaos
-        </h1>
+      {/* Ambient Glow */}
+      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-blue-600 blur-[200px] opacity-20 rounded-full" />
+      <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-blue-500 blur-[200px] opacity-20 rounded-full" />
 
-        <div className="flex gap-4">
-          <NavButton
-            label="📚 AI Reader"
-            active={activeTab === "reader"}
-            onClick={() => setActiveTab("reader")}
-          />
-          <NavButton
-            label="🧠 Quiz"
-            active={activeTab === "quiz"}
-            onClick={() => setActiveTab("quiz")}
-          />
-          <NavButton
-            label="🎤 Meeting Assistant"
-            active={activeTab === "meeting"}
-            onClick={() => setActiveTab("meeting")}
-          />
+      <div className="relative z-10">
+
+        {/* NAVBAR */}
+        <nav className="glass flex justify-between items-center px-10 py-6 shadow-xl">
+
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+            noChaos
+          </h1>
+
+          <div className="flex gap-4">
+            <NavButton
+              label="AI Reader"
+              active={activeTab === "reader"}
+              onClick={() => setActiveTab("reader")}
+            />
+            <NavButton
+              label="Quiz"
+              active={activeTab === "quiz"}
+              onClick={() => setActiveTab("quiz")}
+            />
+            <NavButton
+              label="Meeting Assistant"
+              active={activeTab === "meeting"}
+              onClick={() => setActiveTab("meeting")}
+            />
+          </div>
+        </nav>
+
+        {/* CONTENT */}
+        <div className="max-w-6xl mx-auto p-10 fade-up">
+
+          {activeTab === "reader" && (
+            <div className="glass p-10 rounded-3xl shadow-2xl">
+              <PdfReader setQuizData={setQuizData} />
+            </div>
+          )}
+
+          {activeTab === "quiz" && (
+            <div className="glass p-10 rounded-3xl shadow-2xl">
+              <QuizPage quiz={quizData} />
+            </div>
+          )}
+
+          {activeTab === "meeting" && (
+            <div className="glass p-10 rounded-3xl shadow-2xl">
+              <MeetingAssistant />
+            </div>
+          )}
+
         </div>
-      </nav>
-
-      {/* ================= PAGE CONTENT ================= */}
-      <div className="max-w-6xl mx-auto p-8">
-
-        {activeTab === "reader" && (
-          <div className="bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-800">
-            <PdfReader setQuizData={setQuizData} />
-          </div>
-        )}
-
-        {activeTab === "quiz" && (
-          <div className="bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-800">
-            <QuizPage quiz={quizData} />
-          </div>
-        )}
-
-        {activeTab === "meeting" && (
-          <div className="bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-800">
-            <MeetingAssistant />
-          </div>
-        )}
 
       </div>
     </main>
@@ -77,10 +86,10 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className={`px-5 py-2 rounded-lg font-semibold transition-all duration-200 ${
+      className={`px-6 py-2 rounded-xl font-medium transition-all duration-300 ${
         active
-          ? "bg-blue-600 text-white shadow-md"
-          : "bg-blue-800 text-white hover:bg-blue-600"
+          ? "bg-blue-600 shadow-lg shadow-blue-500/40 scale-105"
+          : "bg-white/5 hover:bg-blue-700 hover:scale-105"
       }`}
     >
       {label}
@@ -111,50 +120,52 @@ function QuizPage({ quiz }: { quiz: any[] }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
-      <h2 className="text-3xl font-bold text-blue-500">
-        🧠 Quiz Time
+      <h2 className="text-3xl font-bold text-blue-400">
+        Assessment Mode
       </h2>
 
       {quiz.map((q, qIndex) => (
         <div
           key={qIndex}
-          className="bg-white p-6 rounded-xl shadow text-black"
+          className="glass p-8 rounded-2xl"
         >
-          <p className="font-semibold mb-4">
+          <p className="font-semibold mb-6 text-lg">
             {qIndex + 1}. {q.question}
           </p>
 
           {q.options.map((option: string, optIndex: number) => (
-            <div key={optIndex} className="mb-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name={`question-${qIndex}`}
-                  onChange={() => {
-                    const updated = [...userAnswers];
-                    updated[qIndex] = optIndex;
-                    setUserAnswers(updated);
-                  }}
-                />
-                {option}
-              </label>
-            </div>
+            <label
+              key={optIndex}
+              className="block mb-3 p-3 rounded-xl bg-white/5 hover:bg-blue-600/20 transition-all cursor-pointer"
+            >
+              <input
+                type="radio"
+                name={`question-${qIndex}`}
+                className="mr-3"
+                onChange={() => {
+                  const updated = [...userAnswers];
+                  updated[qIndex] = optIndex;
+                  setUserAnswers(updated);
+                }}
+              />
+              {option}
+            </label>
           ))}
         </div>
       ))}
 
       <button
         onClick={calculateScore}
-        className="bg-blue-600 text-white px-6 py-3 rounded-lg"
+        className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/30"
       >
-        Submit Quiz
+        Submit Assessment
       </button>
 
       {score !== null && (
         <div className="text-xl font-bold text-green-400">
-          Your Score: {score} / {quiz.length}
+          Score: {score} / {quiz.length}
         </div>
       )}
     </div>

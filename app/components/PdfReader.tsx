@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type PdfReaderProps = {
   setQuizData: React.Dispatch<React.SetStateAction<any[]>>;
@@ -11,31 +11,24 @@ type PdfReaderProps = {
 function StructuredOutput({ text }: { text: string }) {
   if (!text) return null;
 
-  if (!text.includes("## ")) {
-    return (
-      <div className="p-5 bg-white rounded-xl shadow-md border">
-        <div className="whitespace-pre-wrap text-gray-800 text-sm leading-relaxed">
-          {text}
-        </div>
-      </div>
-    );
-  }
-
   const sections = text.split("## ").filter(Boolean);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 fade-up">
       {sections.map((section, index) => {
         const lines = section.split("\n");
         const title = lines[0];
         const content = lines.slice(1).join("\n");
 
         return (
-          <div key={index} className="p-5 bg-white rounded-xl shadow-md border">
-            <h2 className="text-xl font-bold mb-3 text-blue-700">
+          <div
+            key={index}
+            className="glass p-8 rounded-2xl shadow-xl"
+          >
+            <h2 className="text-xl font-bold mb-4 text-blue-400">
               {title}
             </h2>
-            <div className="whitespace-pre-wrap text-gray-800 text-sm leading-relaxed">
+            <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-200">
               {content}
             </div>
           </div>
@@ -45,41 +38,51 @@ function StructuredOutput({ text }: { text: string }) {
   );
 }
 
-/* ================= FOCUS VIEW ================= */
+/* ================= ADAPTIVE FOCUS ================= */
 
 function FocusView({ text }: { text: string }) {
   const sentences = text.split(". ").filter(Boolean);
   const [index, setIndex] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(false);
+
+  useEffect(() => {
+    if (!autoPlay) return;
+
+    const interval = setInterval(() => {
+      setIndex((prev) =>
+        prev < sentences.length - 1 ? prev + 1 : prev
+      );
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [autoPlay, sentences.length]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 fade-up">
 
-      <div className="bg-black border border-gray-700 p-10 rounded-2xl text-2xl leading-relaxed">
-        {sentences[index] || ""}
+      <div className="glass p-10 rounded-3xl text-2xl leading-relaxed">
+        {sentences.map((sentence, i) => (
+          <span
+            key={i}
+            className={
+              i === index
+                ? "bg-blue-600 px-3 py-1 rounded-lg"
+                : "opacity-30"
+            }
+          >
+            {sentence}.{" "}
+          </span>
+        ))}
       </div>
 
-      <div className="flex justify-between">
+      <div className="flex justify-center">
         <button
-          disabled={index === 0}
-          onClick={() => setIndex(index - 1)}
-          className="bg-gray-700 px-6 py-2 rounded disabled:opacity-40"
+          onClick={() => setAutoPlay(!autoPlay)}
+          className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/30"
         >
-          ⬅ Previous
-        </button>
-
-        <button
-          disabled={index >= sentences.length - 1}
-          onClick={() => setIndex(index + 1)}
-          className="bg-blue-600 px-6 py-2 rounded disabled:opacity-40"
-        >
-          Next ➡
+          {autoPlay ? "Pause Focus" : "Start Auto Focus"}
         </button>
       </div>
-
-      <div className="text-center text-gray-400">
-        Sentence {index + 1} of {sentences.length}
-      </div>
-
     </div>
   );
 }
@@ -87,17 +90,19 @@ function FocusView({ text }: { text: string }) {
 /* ================= MAIN COMPONENT ================= */
 
 export default function PdfReader({ setQuizData }: PdfReaderProps) {
+
   const [result, setResult] = useState("");
   const [translated, setTranslated] = useState("");
   const [simplified, setSimplified] = useState("");
   const [focusMode, setFocusMode] = useState(false);
-
-  const [loading, setLoading] = useState(false);
-  const [translating, setTranslating] = useState(false);
-  const [simplifying, setSimplifying] = useState(false);
-  const [quizLoading, setQuizLoading] = useState(false);
+  const [profile, setProfile] = useState("");
 
   const [language, setLanguage] = useState("Hindi");
+
+  const [loading, setLoading] = useState(false);
+  const [simplifying, setSimplifying] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [quizLoading, setQuizLoading] = useState(false);
 
   /* ================= FILE UPLOAD ================= */
 
@@ -123,12 +128,7 @@ export default function PdfReader({ setQuizData }: PdfReaderProps) {
     });
 
     const data = await res.json();
-
-    if (res.ok) {
-      setResult(data.result);
-    } else {
-      alert(data.error || "Analysis failed");
-    }
+    if (res.ok) setResult(data.result);
 
     setLoading(false);
   };
@@ -139,7 +139,6 @@ export default function PdfReader({ setQuizData }: PdfReaderProps) {
     if (!result) return;
 
     setTranslating(true);
-    setTranslated("");
 
     const res = await fetch("/api/translate", {
       method: "POST",
@@ -151,12 +150,7 @@ export default function PdfReader({ setQuizData }: PdfReaderProps) {
     });
 
     const data = await res.json();
-
-    if (res.ok) {
-      setTranslated(data.result);
-    } else {
-      alert(data.error || "Translation failed");
-    }
+    if (res.ok) setTranslated(data.result);
 
     setTranslating(false);
   };
@@ -167,7 +161,6 @@ export default function PdfReader({ setQuizData }: PdfReaderProps) {
     if (!result) return;
 
     setSimplifying(true);
-    setSimplified("");
 
     const res = await fetch("/api/simplify", {
       method: "POST",
@@ -176,49 +169,9 @@ export default function PdfReader({ setQuizData }: PdfReaderProps) {
     });
 
     const data = await res.json();
-
-    if (res.ok) {
-      setSimplified(data.result);
-    } else {
-      alert(data.error || "Simplify failed");
-    }
+    if (res.ok) setSimplified(data.result);
 
     setSimplifying(false);
-  };
-
-  /* ================= SPEECH ================= */
-
-  const handleSpeak = () => {
-    const textToRead = translated || result;
-    if (!textToRead) return;
-
-    window.speechSynthesis.cancel();
-
-    const languageMap: any = {
-      Hindi: "hi-IN",
-      Spanish: "es-ES",
-      French: "fr-FR",
-      German: "de-DE",
-      Marathi: "mr-IN",
-    };
-
-    const selectedLang = languageMap[language] || "en-US";
-    const voices = window.speechSynthesis.getVoices();
-
-    const matchedVoice =
-      voices.find(v => v.lang === selectedLang) ||
-      voices.find(v => v.lang.startsWith(selectedLang.split("-")[0]));
-
-    const utterance = new SpeechSynthesisUtterance(textToRead);
-    utterance.lang = selectedLang;
-    if (matchedVoice) utterance.voice = matchedVoice;
-    utterance.rate = 0.85;
-
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const handleStop = () => {
-    window.speechSynthesis.cancel();
   };
 
   /* ================= QUIZ ================= */
@@ -227,7 +180,6 @@ export default function PdfReader({ setQuizData }: PdfReaderProps) {
     if (!result) return;
 
     setQuizLoading(true);
-    setQuizData([]);
 
     const res = await fetch("/api/quiz", {
       method: "POST",
@@ -236,45 +188,109 @@ export default function PdfReader({ setQuizData }: PdfReaderProps) {
     });
 
     const data = await res.json();
-
     if (res.ok) {
       setQuizData(data.quiz);
-      alert("Quiz generated! Open the Quiz tab.");
-    } else {
-      alert(data.error || "Quiz failed");
+      setFocusMode(false);
     }
 
     setQuizLoading(false);
   };
 
+  /* ================= SPEECH ================= */
+
+  const handleSpeak = () => {
+    const textToRead = simplified || translated || result;
+    if (!textToRead) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(textToRead);
+    utterance.rate = 0.85;
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  /* ================= PROFILE ENGINE ================= */
+
+  useEffect(() => {
+    if (!profile || !result) return;
+
+    if (profile === "Focus Mode") setFocusMode(true);
+    if (profile === "Simplified Reading") handleSimplify();
+    if (profile === "Audio Learning") handleSpeak();
+    if (profile === "Multilingual Mode") {
+      handleTranslate();
+      setTimeout(() => handleSpeak(), 800);
+    }
+    if (profile === "Assessment Mode") {
+      handleGenerateQuiz();
+      setFocusMode(false);
+    }
+
+  }, [profile]);
+
   /* ================= UI ================= */
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-12 text-white fade-up">
+
+      {/* PROFILE SECTION */}
+      <div className="glass p-10 rounded-3xl shadow-2xl">
+        <h2 className="text-2xl font-semibold mb-8 text-blue-400">
+          Adaptive Learning Engine
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-5">
+          {[
+            "Focus Mode",
+            "Simplified Reading",
+            "Audio Learning",
+            "Multilingual Mode",
+            "Assessment Mode",
+          ].map((p) => (
+            <button
+              key={p}
+              onClick={() => setProfile(p)}
+              className={`p-6 rounded-2xl transition-all duration-300 text-left ${
+                profile === p
+                  ? "bg-blue-600/20 border border-blue-500 shadow-lg shadow-blue-500/20 scale-[1.02]"
+                  : "bg-white/5 border border-white/10 hover:bg-blue-600/10"
+              }`}
+            >
+              <div className="font-semibold text-lg">{p}</div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <input
         type="file"
         accept=".pdf"
         onChange={handleFileUpload}
-        className="block w-full text-sm"
+        className="w-full p-4 rounded-xl bg-black/40 border border-white/10"
       />
 
-      {loading && (
-        <p className="text-blue-400 font-medium">
-          Analyzing document with AI...
-        </p>
-      )}
+      {loading && <p className="text-blue-400 animate-pulse">Processing document...</p>}
+      {simplifying && <p className="text-purple-400 animate-pulse">Simplifying...</p>}
+      {translating && <p className="text-green-400 animate-pulse">Translating...</p>}
+      {quizLoading && <p className="text-yellow-400 animate-pulse">Generating assessment...</p>}
 
       {result && (
-        <div className="space-y-4">
+        <>
+          <div className="glass p-6 rounded-2xl flex flex-wrap gap-4">
 
-          {/* Controls */}
-          <div className="flex flex-wrap gap-3 items-center">
+            <button onClick={() => setFocusMode(!focusMode)} className="premium-btn">
+              {focusMode ? "Exit Focus" : "Adaptive Focus"}
+            </button>
+
+            <button onClick={handleSimplify} className="premium-btn">
+              Simplify
+            </button>
 
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="bg-gray-800 text-white border border-gray-700 px-3 py-2 rounded"
+              className="bg-black/60 border border-white/10 rounded-xl px-4 py-2"
             >
               <option>Hindi</option>
               <option>Spanish</option>
@@ -283,57 +299,26 @@ export default function PdfReader({ setQuizData }: PdfReaderProps) {
               <option>Marathi</option>
             </select>
 
-            <button onClick={handleTranslate} className="bg-green-600 px-4 py-2 rounded">
-              🌍 Translate
+            <button onClick={handleTranslate} className="premium-btn">
+              Translate
             </button>
 
-            <button onClick={handleSimplify} className="bg-purple-600 px-4 py-2 rounded">
-              🧒 Simplify
+            <button onClick={handleSpeak} className="premium-btn">
+              Read
             </button>
 
-            <button onClick={handleGenerateQuiz} className="bg-yellow-600 px-4 py-2 rounded">
-              🧠 Generate Quiz
-            </button>
-
-            <button onClick={handleSpeak} className="bg-blue-600 px-4 py-2 rounded">
-              🔊 Read
-            </button>
-
-            <button onClick={handleStop} className="bg-red-600 px-4 py-2 rounded">
-              ⏹ Stop
-            </button>
-
-            <button
-              onClick={() => setFocusMode(!focusMode)}
-              className="bg-indigo-600 px-4 py-2 rounded"
-            >
-              {focusMode ? "Exit Focus Mode" : "🧠 Adaptive Focus Mode"}
+            <button onClick={handleGenerateQuiz} className="premium-btn">
+              Generate Quiz
             </button>
 
           </div>
 
-          {translating && <p className="text-green-400">Translating...</p>}
-          {simplifying && <p className="text-purple-400">Simplifying...</p>}
-          {quizLoading && <p className="text-yellow-400">Generating quiz...</p>}
-
-          {/* Main Output */}
           {focusMode ? (
-            <FocusView text={translated || result} />
+            <FocusView text={simplified || translated || result} />
           ) : (
-            <StructuredOutput text={translated || result} />
+            <StructuredOutput text={simplified || translated || result} />
           )}
-
-          {/* Simplified */}
-          {simplified && !focusMode && (
-            <div className="mt-6">
-              <h2 className="text-2xl font-bold text-purple-400 mb-4">
-                🧒 Simplified Version
-              </h2>
-              <StructuredOutput text={simplified} />
-            </div>
-          )}
-
-        </div>
+        </>
       )}
     </div>
   );
